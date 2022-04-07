@@ -1,0 +1,184 @@
+DEMO 1.1
+-------------------------------------------
+<CommunicationMessage>
+  <Application>SafeAndSound</Application>
+  <Channel>Email</Channel>
+  <Address>danielj@netstar.co.za</Address>
+  <Subject>Testing email for DevConf</Subject>
+  <Body>DRIVING DURING SPECIFIED TIME alert for BQS3915 on 21-03 18:46 at 102.44848/2.13015, 5, Sebatu</Body>
+  <Name>Daniël</Name>
+  <Surname>Joubert</Surname>
+  <Latitude>2.13015</Latitude>
+  <Longitude>102.44848</Longitude>
+  <Registration>BQS3915</Registration>
+  <NotificationName>Ignition On</NotificationName>
+  <NotificationEditorMetadata>Time Rule:IgnitionOn</NotificationEditorMetadata>
+  <NotificationCategory>Time Rule:IgnitionOn</NotificationCategory>
+  <NotificationHistoryId>132730338</NotificationHistoryId>
+</CommunicationMessage>
+-------------------------------------------
+DEMO 1.2
+-------------------------------------------
+
+
+-------------------------------------------
+DEMO 2.1
+-------------------------------------------
+
+
+<UnitLocationProtocol>
+  <DeviceType>DeviceTypeA</DeviceType>
+  <UniqueIdentifier>1234</UniqueIdentifier>
+  <TimeStamp>2021-12-01T08:52:09Z</TimeStamp>
+  <Lon>30.1225</Lon>
+  <Lat>-24.99611</Lat>
+  <speed>14</speed>
+</UnitLocationProtocol>
+
+<UnitLocationProtocol>
+  <DeviceType>DeviceTypeB</DeviceType>
+  <UniqueIdentifier>1234</UniqueIdentifier>
+  <TimeStamp>2021-12-01T08:52:09Z</TimeStamp>
+  <Lon>30.1225</Lon>
+  <Lat>-24.99611</Lat>
+  <speed>17</speed>
+</UnitLocationProtocol>
+
+
+<UnitLocationProtocol>
+  <DeviceType>DeviceTypeA</DeviceType>
+  <UniqueIdentifier>4321</UniqueIdentifier>
+  <TimeStamp>2021-12-01T08:52:09Z</TimeStamp>
+  <Lon>30.1225</Lon>
+  <Lat>-24.99611</Lat>
+  <speed>14</speed>
+</UnitLocationProtocol>
+
+
+ && d.IsActive
+
+-------------------------------------------
+DEMO 3
+-------------------------------------------
+<param name="task" dependencyType="JsonDeserializerTask`1[[UnitLocationProtocol]]" />
+
+{
+	"DeviceType": "DeviceTypeA",
+  "UniqueIdentifier":"1234",
+  "TimeStamp":"2021-12-01T08:52:09Z",
+  "Lon":30.1225,
+  "Lat":-24.99611,
+  "speed":14
+}
+
+-------------------------------------------
+DEMO 4
+-------------------------------------------
+			if(value == null)
+				return null;
+
+			Guard.ArgumentNotNull(dataContext, nameof(dataContext));	
+
+-------------------------------------------
+DEMO 5.1
+-------------------------------------------
+	<sectionExtension type="Microsoft.Practices.Unity.InterceptionExtension.Configuration.InterceptionConfigurationExtension, Unity.Interception.Configuration" />
+		<container>
+			<extension type="Interception" />
+			<type type="PerformanceBehavior">
+				<property name="CounterCategory" value="Demo" />
+			</type>
+
+				<interceptor type="InterfaceInterceptor" />
+				<interceptionBehavior type="TraceBehavior" />
+				<interceptionBehavior type="PerformanceBehavior" />
+
+  <type type="ITask`1[[string]]" mapTo="NullTask`1[[string]]" name="null" />
+
+-------------------------------------------
+DEMO 5.2
+-------------------------------------------
+			<type type="ICache" mapTo="Cache" name="Cache">
+				<property name="CacheDuration" value="00:00:20" />
+			</type>
+			<workerThread type="Demo.ICache" dependencyName="Cache" method="RemoveExpiredValues" Wait="00:00:10" />
+
+    	<type type="IDataContext" mapTo="DataContextWithCache" name="DataContextWithCache">
+				<constructor>
+					<param name="dataContext" dependencyName="FastDataContext" />
+					<param name="cache" dependencyName="Cache" />
+				</constructor>
+			</type>
+
+
+-------------------------------------------
+Original unity config
+-------------------------------------------
+<unity>
+	<namespace name="Demo" />
+	<assembly name="Demo" />
+	<sectionExtension type="WorkerThreadExtension" />
+	<sectionExtension type="UnityConfig.ContainerDictionaryExtension" />
+
+	<containers>
+		<container>
+			<type type="IDataContext" mapTo="FastDataContext" name="FastDataContext">
+				<constructor>
+					<param name="connectionStringName" value="Demo" />
+				</constructor>
+				<property name="CommandTimeout" value="300" />
+			</type>
+			<type type="IQueueReader" mapTo="MsmqQueueReader" name="MsmqQueueReader">
+				<constructor>
+					<param name="queuePath" value=".\private$\demo.in" />
+					<param name="task" dependencyName="deserializer" />
+				</constructor>
+				<property name="ReceiveTimeout" value="00:00:20" />
+			</type>
+			<type type="IProcess`1[[string]]" mapTo="ProcessLink`2[[string], [UnitLocationProtocol]]" name="deserializer" >
+				<constructor>
+					<param name="task" dependencyType="XmlDeserializerTask`1[[UnitLocationProtocol]]" />
+					<param name="nextProcess" dependencyName="Convert2Common" />
+				</constructor>
+			</type>
+			<type type="IConvert2Common" mapTo="DeviceTypeA2Common" name="DeviceTypeA" />
+			<type type="IConvert2Common" mapTo="DeviceTypeA2Common" name="DeviceTypeB" />
+			<type type="ITask`2[[UnitLocationProtocol], [Location]]" mapTo="Convert2Common" name="convert2Common">
+				<constructor>
+					<param name="converters">
+						<containerDictionary/>
+					</param>
+				</constructor>
+			</type>
+			<type type="IProcess`1[[UnitLocationProtocol]]" mapTo="ProcessLink`2[[UnitLocationProtocol], [Location]]" name="Convert2Common">
+				<constructor>
+					<param name="task" dependencyName="convert2Common" />
+					<param name="nextProcess" dependencyName="DataFilter" />
+				</constructor>
+			</type>
+			<type type="ITask`2[[Location], [Location]]" mapTo="DataFilter" name="dataFilter">
+				<constructor>
+					<param name="dataContext" dependencyName="FastDataContext" />
+				</constructor>
+			</type>
+			<type type="IProcess`1[[Location]]" mapTo="ProcessLink`2[[Location], [Location]]" name="DataFilter">
+				<constructor>
+					<param name="task" dependencyName="dataFilter" />
+					<param name="nextProcess" dependencyName="xmlSerializer" />
+				</constructor>
+			</type>
+			<type type="IProcess`1[[Location]]" mapTo="ProcessLink`2[[Location], [string]]" name="xmlSerializer">
+				<constructor>
+					<param name="task" dependencyType="XmlSerializerTask`1[[Location]]" />
+					<param name="nextProcess" dependencyName="queueWriter" />
+				</constructor>
+			</type>
+			<type type="IProcess`1[[string]]" mapTo="MsmqQueueWriter" name="queueWriter">
+				<constructor>
+					<param name="queuePath" value=".\private$\demo.out" />
+				</constructor>
+			</type>
+			<workerThread type="Demo.IQueueReader" dependencyName="MsmqQueueReader" method="Dequeue" />
+		</container>
+	</containers>
+</unity>
